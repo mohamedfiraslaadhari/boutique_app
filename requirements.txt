@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-WTF
+Flask-Login
+Flask-Admin
+Flask-Reuploaded
+Flask-User==1.0.2.2
+psycopg2-binary
+python-dotenv
+email-validator

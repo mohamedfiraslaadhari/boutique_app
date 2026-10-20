@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Gestion des produits</h2>
+<p><a class="bouton" href="{{ url_for('shop.ajouter_produit') }}">+ Ajouter un produit</a></p>
+
+<table>
+    <tr><th>Photo</th><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Actions</th></tr>
+    {% for p in produits %}
+    <tr>
+        <td>
+            {% if p.photo %}
+            <img class="miniature" src="{{ url_for('static', filename='uploads/' + p.photo) }}" alt="">
+            {% else %}-{% endif %}
+        </td>
+        <td>{{ p.nom }}</td>
+        <td>{{ p.categorie.nom }}</td>
+        <td>{{ '%.2f'|format(p.prix) }} DT</td>
+        <td>{{ p.stock }}</td>
+        <td>
+            <a href="{{ url_for('shop.modifier_produit', produit_id=p.id) }}">Modifier</a>
+            <form method="POST" action="{{ url_for('shop.supprimer_produit', produit_id=p.id) }}"
+                  style="display:inline"
+                  onsubmit="return confirm('Supprimer ce produit ?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Supprimer</button>
+            </form>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Aucun produit.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

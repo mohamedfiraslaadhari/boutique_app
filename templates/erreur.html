@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Erreur {{ code }}</h2>
+<p>{{ message }}</p>
+<p><a href="{{ url_for('shop.catalogue') }}">Retour au catalogue</a></p>
+{% endblock %}

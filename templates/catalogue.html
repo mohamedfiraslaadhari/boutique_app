@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Catalogue</h2>
+
+<form method="GET" class="filtres">
+    <input type="text" name="q" placeholder="Rechercher un produit" value="{{ recherche }}">
+    <select name="categorie">
+        <option value="">Toutes les catégories</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if c.id == categorie_id %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filtrer</button>
+    <a href="{{ url_for('shop.catalogue') }}">Réinitialiser</a>
+</form>
+
+<div class="grille">
+    {% for p in produits %}
+    <article class="carte-produit">
+        <a href="{{ url_for('shop.detail', produit_id=p.id) }}">
+            {% if p.photo %}
+            <img src="{{ url_for('static', filename='uploads/' + p.photo) }}" alt="{{ p.nom }}">
+            {% else %}
+            <div class="sans-photo">Pas de photo</div>
+            {% endif %}
+        </a>
+        <h3><a href="{{ url_for('shop.detail', produit_id=p.id) }}">{{ p.nom }}</a></h3>
+        <p class="categorie">{{ p.categorie.nom }}</p>
+        <p class="prix">{{ '%.2f'|format(p.prix) }} DT</p>
+        {% if p.stock > 0 %}
+        <p class="stock ok">En stock : {{ p.stock }}</p>
+        {% else %}
+        <p class="stock rupture">Rupture de stock</p>
+        {% endif %}
+    </article>
+    {% else %}
+    <p>Aucun produit trouvé.</p>
+    {% endfor %}
+</div>
+{% endblock %}

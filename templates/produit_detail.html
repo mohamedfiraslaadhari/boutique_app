@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ produit.nom }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('shop.catalogue') }}">&larr; Retour au catalogue</a></p>
+<div class="detail">
+    {% if produit.photo %}
+    <img src="{{ url_for('static', filename='uploads/' + produit.photo) }}" alt="{{ produit.nom }}">
+    {% else %}
+    <div class="sans-photo grande">Pas de photo</div>
+    {% endif %}
+    <div>
+        <h2>{{ produit.nom }}</h2>
+        <p class="categorie">Catégorie : {{ produit.categorie.nom }}</p>
+        <p class="prix">{{ '%.2f'|format(produit.prix) }} DT</p>
+        {% if produit.stock > 0 %}
+        <p class="stock ok">En stock : {{ produit.stock }}</p>
+        {% else %}
+        <p class="stock rupture">Rupture de stock</p>
+        {% endif %}
+        <p>{{ produit.description or 'Aucune description.' }}</p>
+    </div>
+</div>
+{% endblock %}

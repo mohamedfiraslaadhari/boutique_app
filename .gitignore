@@ -1,0 +1,9 @@
+monvenv/
+.venv/
+venv/
+.idea/
+__pycache__/
+*.pyc
+.env
+static/uploads/*
+!static/uploads/.gitkeep

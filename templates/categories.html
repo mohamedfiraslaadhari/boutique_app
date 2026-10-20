@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Catégories</h2>
+
+<form method="POST" novalidate>
+    {% include '_champs.html' %}
+</form>
+
+<table>
+    <tr><th>Nom</th><th>Produits</th><th>Action</th></tr>
+    {% for c in categories %}
+    <tr>
+        <td>{{ c.nom }}</td>
+        <td>{{ c.produits|length }}</td>
+        <td>
+            <form method="POST" action="{{ url_for('shop.supprimer_categorie', categorie_id=c.id) }}"
+                  style="display:inline"
+                  onsubmit="return confirm('Supprimer cette catégorie ?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Supprimer</button>
+            </form>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Aucune catégorie.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

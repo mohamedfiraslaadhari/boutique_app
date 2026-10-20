@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ titre }}</h2>
+{% if produit and produit.photo %}
+<p>Photo actuelle :<br>
+<img class="miniature" src="{{ url_for('static', filename='uploads/' + produit.photo) }}" alt=""></p>
+{% endif %}
+{# enctype multipart/form-data est obligatoire pour envoyer un fichier #}
+<form method="POST" enctype="multipart/form-data" novalidate>
+    {% include '_champs.html' %}
+</form>
+<p><a href="{{ url_for('shop.gestion_produits') }}">Annuler</a></p>
+{% endblock %}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Boutique{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="marque" href="{{ url_for('shop.catalogue') }}">🛒 Boutique</a>
+            <a href="{{ url_for('shop.catalogue') }}">Catalogue</a>
+
+            {# Liens réservés aux rôles admin et vendeur #}
+            {% if current_user.is_authenticated and current_user.has_roles(['admin', 'vendeur']) %}
+                <a href="{{ url_for('shop.gestion_produits') }}">Produits</a>
+                <a href="{{ url_for('shop.categories') }}">Catégories</a>
+            {% endif %}
+
+            <span class="droite">
+                {% if current_user.is_authenticated %}
+                    Bonjour <b>{{ current_user.username }}</b>
+                    <a href="{{ url_for('user.logout') }}">Déconnexion</a>
+                {% else %}
+                    <a href="{{ url_for('user.login') }}">Connexion</a>
+                    <a href="{{ url_for('user.register') }}">Inscription</a>
+                {% endif %}
+            </span>
+        </nav>
+    </header>
+
+    <main>
+        {# Messages flash (succès, erreurs) #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                {% set classe = 'danger' if category in ['danger', 'error'] else category %}
+                <p class="message {{ classe }}">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
