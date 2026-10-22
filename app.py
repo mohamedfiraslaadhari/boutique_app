@@ -10,11 +10,13 @@ from flask_user.signals import user_registered
 from config import Config
 from extensions import csrf, db, migrate, photos
 from models import Categorie, Produit, Role, User
+from api import api
 from cart import cart
 from shop import shop
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.json.ensure_ascii = False      # l'API affiche les accents (é, è, ’) tels quels
 
 # --- Initialisation des extensions ---
 db.init_app(app)
@@ -25,6 +27,7 @@ user_manager = UserManager(app, db, User)   # Flask-User (utilise Flask-Login en
 
 app.register_blueprint(shop)
 app.register_blueprint(cart)
+app.register_blueprint(api)
 
 
 # ---------- Rôle par défaut à l'inscription ----------
