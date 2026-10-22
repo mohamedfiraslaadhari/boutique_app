@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des commandes{% endblock %}
+{% block content %}
+<h2>Gestion des commandes</h2>
+
+<form method="GET" class="filtres">
+    <select name="statut">
+        <option value="">Tous les statuts</option>
+        {% for code, libelle in STATUTS.items() %}
+        <option value="{{ code }}" {% if code == filtre %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filtrer</button>
+    <a href="{{ url_for('cart.gestion_commandes') }}">Réinitialiser</a>
+</form>
+
+<table>
+    <tr><th>N°</th><th>Client</th><th>Date</th><th>Total</th><th>Statut</th><th>Changer le statut</th><th></th></tr>
+    {% for c in commandes %}
+    <tr>
+        <td>#{{ c.id }}</td>
+        <td>{{ c.client.username }}</td>
+        <td>{{ c.date_commande.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>{{ '%.2f'|format(c.total) }} DT</td>
+        <td><span class="statut {{ c.statut }}">{{ STATUTS[c.statut] }}</span></td>
+        <td>
+            {% if c.statut == 'annulee' %}-{% else %}
+            <form method="POST" action="{{ url_for('cart.changer_statut', commande_id=c.id) }}" class="en-ligne">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="statut">
+                    {% for code, libelle in STATUTS.items() %}
+                    <option value="{{ code }}" {% if code == c.statut %}selected{% endif %}>{{ libelle }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="neutre">OK</button>
+            </form>
+            {% endif %}
+        </td>
+        <td><a href="{{ url_for('cart.detail_commande', commande_id=c.id) }}">Détail</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">Aucune commande.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

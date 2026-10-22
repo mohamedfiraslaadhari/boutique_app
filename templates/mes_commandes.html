@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Mes commandes{% endblock %}
+{% block content %}
+<h2>Mes commandes</h2>
+
+{% if commandes %}
+<table>
+    <tr><th>N°</th><th>Date</th><th>Statut</th><th>Total</th><th></th></tr>
+    {% for c in commandes %}
+    <tr>
+        <td>#{{ c.id }}</td>
+        <td>{{ c.date_commande.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td><span class="statut {{ c.statut }}">{{ STATUTS[c.statut] }}</span></td>
+        <td>{{ '%.2f'|format(c.total) }} DT</td>
+        <td><a href="{{ url_for('cart.detail_commande', commande_id=c.id) }}">Voir le détail</a></td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>Vous n'avez encore passé aucune commande.</p>
+<p><a class="bouton" href="{{ url_for('shop.catalogue') }}">Voir le catalogue</a></p>
+{% endif %}
+{% endblock %}

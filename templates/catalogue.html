@@ -29,6 +29,11 @@
         <p class="prix">{{ '%.2f'|format(p.prix) }} DT</p>
         {% if p.stock > 0 %}
         <p class="stock ok">En stock : {{ p.stock }}</p>
+        <form method="POST" action="{{ url_for('cart.ajouter', produit_id=p.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="quantite" value="1">
+            <button type="submit">Ajouter au panier</button>
+        </form>
         {% else %}
         <p class="stock rupture">Rupture de stock</p>
         {% endif %}

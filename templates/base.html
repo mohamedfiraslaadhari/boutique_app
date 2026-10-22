@@ -16,10 +16,13 @@
             {% if current_user.is_authenticated and current_user.has_roles(['admin', 'vendeur']) %}
                 <a href="{{ url_for('shop.gestion_produits') }}">Produits</a>
                 <a href="{{ url_for('shop.categories') }}">Catégories</a>
+                <a href="{{ url_for('cart.gestion_commandes') }}">Commandes</a>
             {% endif %}
 
             <span class="droite">
+                <a href="{{ url_for('cart.voir_panier') }}">🛍️ Panier{% if nb_panier %} ({{ nb_panier }}){% endif %}</a>
                 {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('cart.mes_commandes') }}">Mes commandes</a>
                     Bonjour <b>{{ current_user.username }}</b>
                     <a href="{{ url_for('user.logout') }}">Déconnexion</a>
                 {% else %}

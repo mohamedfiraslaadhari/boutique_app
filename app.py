@@ -10,6 +10,7 @@ from flask_user.signals import user_registered
 from config import Config
 from extensions import csrf, db, migrate, photos
 from models import Categorie, Produit, Role, User
+from cart import cart
 from shop import shop
 
 app = Flask(__name__)
@@ -23,6 +24,7 @@ configure_uploads(app, photos)     # Flask-Uploads : dossier static/uploads
 user_manager = UserManager(app, db, User)   # Flask-User (utilise Flask-Login en interne)
 
 app.register_blueprint(shop)
+app.register_blueprint(cart)
 
 
 # ---------- Rôle par défaut à l'inscription ----------

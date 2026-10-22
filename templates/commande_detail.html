@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Commande #{{ commande.id }}{% endblock %}
+{% block content %}
+<h2>Commande #{{ commande.id }}</h2>
+<p>
+    Client : <b>{{ commande.client.username }}</b><br>
+    Date : {{ commande.date_commande.strftime('%d/%m/%Y %H:%M') }}<br>
+    Statut : <span class="statut {{ commande.statut }}">{{ STATUTS[commande.statut] }}</span>
+</p>
+
+<table>
+    <tr><th>Produit</th><th>Prix unitaire</th><th>Quantité</th><th>Sous-total</th></tr>
+    {% for l in commande.lignes %}
+    <tr>
+        <td>{{ l.produit.nom }}</td>
+        <td>{{ '%.2f'|format(l.prix_unitaire) }} DT</td>
+        <td>{{ l.quantite }}</td>
+        <td>{{ '%.2f'|format(l.sous_total) }} DT</td>
+    </tr>
+    {% endfor %}
+    <tr><th colspan="3" style="text-align:right">Total</th><th>{{ '%.2f'|format(commande.total) }} DT</th></tr>
+</table>
+
+<div class="actions">
+    {% if commande.user_id == current_user.id and commande.statut == 'en_attente' %}
+    <form method="POST" action="{{ url_for('cart.annuler_commande', commande_id=commande.id) }}" class="en-ligne"
+          onsubmit="return confirm('Annuler cette commande ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Annuler la commande</button>
+    </form>
+    {% endif %}
+    {% if current_user.has_roles(['admin', 'vendeur']) %}
+    <a href="{{ url_for('cart.gestion_commandes') }}">&larr; Toutes les commandes</a>
+    {% else %}
+    <a href="{{ url_for('cart.mes_commandes') }}">&larr; Mes commandes</a>
+    {% endif %}
+</div>
+{% endblock %}

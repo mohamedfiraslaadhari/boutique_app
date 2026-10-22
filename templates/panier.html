@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Mon panier{% endblock %}
+{% block content %}
+<h2>Mon panier</h2>
+
+{% if lignes %}
+<table>
+    <tr><th>Produit</th><th>Prix unitaire</th><th>Quantité</th><th>Sous-total</th><th>Action</th></tr>
+    {% for l in lignes %}
+    <tr>
+        <td><a href="{{ url_for('shop.detail', produit_id=l.produit.id) }}">{{ l.produit.nom }}</a></td>
+        <td>{{ '%.2f'|format(l.produit.prix) }} DT</td>
+        <td>
+            <form method="POST" action="{{ url_for('cart.modifier', produit_id=l.produit.id) }}" class="en-ligne">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="number" name="quantite" value="{{ l.quantite }}" min="0" max="{{ l.produit.stock }}" class="petit">
+                <button type="submit" class="neutre">Mettre à jour</button>
+            </form>
+        </td>
+        <td>{{ '%.2f'|format(l.sous_total) }} DT</td>
+        <td>
+            <form method="POST" action="{{ url_for('cart.retirer', produit_id=l.produit.id) }}" class="en-ligne">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Retirer</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    <tr><th colspan="3" style="text-align:right">Total</th><th colspan="2">{{ '%.2f'|format(total) }} DT</th></tr>
+</table>
+
+<div class="actions">
+    {% if current_user.is_authenticated %}
+    <form method="POST" action="{{ url_for('cart.commander') }}" class="en-ligne"
+          onsubmit="return confirm('Confirmer la commande ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="neutre vert">Passer la commande</button>
+    </form>
+    {% else %}
+    <a class="bouton" href="{{ url_for('user.login', next=url_for('cart.voir_panier')) }}">Connectez-vous pour commander</a>
+    {% endif %}
+    <form method="POST" action="{{ url_for('cart.vider') }}" class="en-ligne">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="neutre gris">Vider le panier</button>
+    </form>
+    <a href="{{ url_for('shop.catalogue') }}">Continuer mes achats</a>
+</div>
+{% else %}
+<p>Votre panier est vide.</p>
+<p><a class="bouton" href="{{ url_for('shop.catalogue') }}">Voir le catalogue</a></p>
+{% endif %}
+{% endblock %}
