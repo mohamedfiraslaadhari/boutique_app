@@ -10,6 +10,7 @@ from flask_user.signals import user_registered
 from config import Config
 from extensions import csrf, db, migrate, photos
 from models import Categorie, Produit, Role, User
+from admin_panel import init_admin
 from api import api
 from cart import cart
 from shop import shop
@@ -28,6 +29,7 @@ user_manager = UserManager(app, db, User)   # Flask-User (utilise Flask-Login en
 app.register_blueprint(shop)
 app.register_blueprint(cart)
 app.register_blueprint(api)
+init_admin(app)                    # Flask-Admin : http://127.0.0.1:5000/admin/
 
 
 # ---------- Rôle par défaut à l'inscription ----------

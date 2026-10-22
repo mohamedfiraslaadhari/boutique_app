@@ -227,13 +227,20 @@ class TestApiCommandes(BaseTest):
 
 
 # ====================== Site web : panier et commandes ======================
+def jeton(html):
+    """Retourne le jeton CSRF caché dans une page (ou '' s'il n'y en a pas)."""
+    m = re.search(r'name="csrf_token"[^>]*value="([^"]*)"', html) \
+        or re.search(r'value="([^"]*)"[^>]*name="csrf_token"', html)
+    return m.group(1) if m else ''
+
+
 def se_connecter(client, nom, mot_de_passe):
-    """Connexion par le formulaire, comme dans un navigateur (champ caché 'next')."""
+    """Connexion par le formulaire, comme dans un navigateur (jeton CSRF et champ 'next')."""
     page = client.get('/user/sign-in').data.decode()
     suivant = re.search(r'name="next"[^>]*value="([^"]*)"', page) \
         or re.search(r'value="([^"]*)"[^>]*name="next"', page)
     return client.post('/user/sign-in', follow_redirects=True, data={
-        'username': nom, 'password': mot_de_passe,
+        'csrf_token': jeton(page), 'username': nom, 'password': mot_de_passe,
         'next': suivant.group(1) if suivant else '/', 'reg_next': '/'})
 
 
@@ -271,6 +278,114 @@ class TestPanierWeb(BaseTest):
         r = self.client.post('/gestion/commandes/1/statut', data={'statut': 'livree'},
                              follow_redirects=True)
         self.assertIn('Statut mis à jour'.encode(), r.data)
+
+
+# ====================== Panneau d'administration (Flask-Admin) ======================
+class TestAdmin(BaseTest):
+    def setUp(self):
+        super().setUp()
+        app.config['WTF_CSRF_ENABLED'] = True        # ici on teste aussi la protection CSRF
+
+    def tearDown(self):
+        app.config['WTF_CSRF_ENABLED'] = False
+
+    def admin(self):
+        navigateur = app.test_client()
+        se_connecter(navigateur, 'admin', 'Admin1234!')
+        return navigateur
+
+    def formulaire(self, navigateur, adresse, **champs):
+        """Ouvre un formulaire pour récupérer son jeton CSRF, puis l'envoie."""
+        jeton_csrf = jeton(navigateur.get(adresse).data.decode())
+        return navigateur.post(adresse, data={'csrf_token': jeton_csrf, **champs})
+
+    def test_acces_reserve_au_role_admin(self):
+        self.assertEqual(self.client.get('/admin/').status_code, 302)          # pas connecté
+        for nom, mot_de_passe in (('client', 'Client1234!'), ('vendeur', 'Vendeur1234!')):
+            navigateur = app.test_client()
+            se_connecter(navigateur, nom, mot_de_passe)
+            self.assertEqual(navigateur.get('/admin/').status_code, 403, nom)
+            self.assertEqual(navigateur.get('/admin/produit/').status_code, 403, nom)
+
+    def test_pages_de_l_admin(self):
+        navigateur = self.admin()
+        for adresse in ('/admin/', '/admin/produit/', '/admin/categorie/', '/admin/commande/',
+                        '/admin/user/', '/admin/produit/?search=clavier'):
+            self.assertEqual(navigateur.get(adresse).status_code, 200, adresse)
+
+    def test_creer_modifier_supprimer_un_produit(self):
+        navigateur = self.admin()
+        valeurs = dict(nom='Casque audio', description='Bluetooth', prix='89.90', stock='10',
+                       categorie='1')
+        r = self.formulaire(navigateur, '/admin/produit/new/', **valeurs)
+        self.assertEqual(r.status_code, 302)
+        with app.app_context():
+            self.assertEqual(Produit.query.filter_by(nom='Casque audio').count(), 1)
+        valeurs['stock'] = '7'
+        self.formulaire(navigateur, '/admin/produit/edit/?id=5', **valeurs)
+        self.assertEqual(self.stock(5), 7)
+        jeton_csrf = jeton(navigateur.get('/admin/produit/').data.decode())
+        navigateur.post('/admin/produit/delete/', data={
+            'csrf_token': jeton_csrf, 'id': '5', 'url': '/admin/produit/'})
+        with app.app_context():
+            self.assertIsNone(db.session.get(Produit, 5))
+
+    def test_prix_negatif_refuse(self):
+        r = self.formulaire(self.admin(), '/admin/produit/new/', nom='Mauvais', description='',
+                            prix='-3', stock='1', categorie='1')
+        self.assertEqual(r.status_code, 200)         # le formulaire est ré-affiché avec l'erreur
+        with app.app_context():
+            self.assertEqual(Produit.query.count(), 4)
+
+    def test_formulaire_sans_jeton_csrf_refuse(self):
+        r = self.admin().post('/admin/produit/new/', data={
+            'nom': 'SansJeton', 'prix': '5', 'stock': '1', 'categorie': '1'})
+        self.assertEqual(r.status_code, 400)
+        with app.app_context():
+            self.assertEqual(Produit.query.count(), 4)
+
+    def test_un_produit_deja_commande_ne_se_supprime_pas(self):
+        app.test_client().post('/api/commandes', headers=CLIENT,
+                               json={'lignes': [{'produit_id': 1, 'quantite': 1}]})
+        navigateur = self.admin()
+        jeton_csrf = jeton(navigateur.get('/admin/produit/').data.decode())
+        r = navigateur.post('/admin/produit/delete/', follow_redirects=True, data={
+            'csrf_token': jeton_csrf, 'id': '1', 'url': '/admin/produit/'})
+        self.assertIn('figure dans des commandes'.encode(), r.data)    # message clair
+        with app.app_context():
+            self.assertIsNotNone(db.session.get(Produit, 1))
+
+    def test_categories_vide_supprimable_pleine_protegee(self):
+        navigateur = self.admin()
+        self.formulaire(navigateur, '/admin/categorie/new/', nom='Jardin')       # id 4, vide
+        jeton_csrf = jeton(navigateur.get('/admin/categorie/').data.decode())
+        r = navigateur.post('/admin/categorie/delete/', follow_redirects=True, data={
+            'csrf_token': jeton_csrf, 'id': '1', 'url': '/admin/categorie/'})   # Informatique
+        self.assertIn('contient des produits'.encode(), r.data)
+        navigateur.post('/admin/categorie/delete/', data={
+            'csrf_token': jeton_csrf, 'id': '4', 'url': '/admin/categorie/'})
+        with app.app_context():
+            self.assertIsNotNone(db.session.get(Categorie, 1))
+            self.assertIsNone(db.session.get(Categorie, 4))
+
+    def test_les_commandes_sont_en_lecture_seule(self):
+        app.test_client().post('/api/commandes', headers=CLIENT,
+                               json={'lignes': [{'produit_id': 1, 'quantite': 2}]})
+        navigateur = self.admin()
+        self.assertEqual(navigateur.get('/admin/commande/new/').status_code, 302)
+        self.assertEqual(navigateur.get('/admin/commande/edit/?id=1').status_code, 302)
+        detail = navigateur.get('/admin/commande/details/?id=1')
+        self.assertEqual(detail.status_code, 200)
+        self.assertIn('Clavier sans fil'.encode(), detail.data)
+
+    def test_un_admin_ne_peut_pas_se_retirer_son_acces(self):
+        navigateur = self.admin()
+        r = self.formulaire(navigateur, '/admin/user/edit/?id=1', username='admin',
+                            email='admin@boutique.tn', active='y', roles='2')   # rôle vendeur seul
+        self.assertEqual(r.status_code, 200)
+        with app.app_context():
+            from models import User
+            self.assertTrue(db.session.get(User, 1).has_roles('admin'))
 
 
 if __name__ == '__main__':

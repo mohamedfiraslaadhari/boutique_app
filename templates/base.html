@@ -18,6 +18,9 @@
                 <a href="{{ url_for('shop.categories') }}">Catégories</a>
                 <a href="{{ url_for('cart.gestion_commandes') }}">Commandes</a>
             {% endif %}
+            {% if current_user.is_authenticated and current_user.has_roles('admin') %}
+                <a href="{{ url_for('admin.index') }}">Administration</a>
+            {% endif %}
 
             <span class="droite">
                 <a href="{{ url_for('cart.voir_panier') }}">🛍️ Panier{% if nb_panier %} ({{ nb_panier }}){% endif %}</a>
