@@ -5,7 +5,7 @@ Adresse : http://127.0.0.1:5000/admin/
 from decimal import Decimal
 
 from flask import abort, flash, redirect, request, url_for
-from flask_admin import Admin, AdminIndexView
+from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
 from flask_login import current_user
@@ -13,6 +13,7 @@ from markupsafe import Markup, escape
 from wtforms.validators import Length, NumberRange, ValidationError
 
 from cart import STATUTS
+from dashboard import calculer_statistiques
 from extensions import db
 from models import Categorie, Commande, Produit, User
 
@@ -30,7 +31,9 @@ class AccesAdmin:
 
 
 class VueAccueil(AccesAdmin, AdminIndexView):
-    pass
+    @expose('/')
+    def index(self):
+        return self.render('admin/accueil.html', stats=calculer_statistiques())
 
 
 class VueModele(AccesAdmin, ModelView):
@@ -131,6 +134,7 @@ def init_admin(app):
             VueUtilisateur(User, db.session, name='Utilisateurs')]
     for vue in vues:
         admin.add_view(vue)          # la protection CSRF du site (Flask-WTF) s'applique aussi ici
+    admin.add_link(MenuLink('Tableau de bord complet', endpoint='dashboard.tableau'))
     admin.add_link(MenuLink('Gérer les statuts des commandes', endpoint='cart.gestion_commandes'))
     admin.add_link(MenuLink('Retour au site', endpoint='shop.catalogue'))
     return admin

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<h2>Tableau de bord</h2>
+
+<div class="cartes-kpi">
+    <div class="kpi"><span class="kpi-valeur">{{ '%.2f'|format(stats.chiffre_affaires) }} DT</span>
+        <span class="kpi-titre">Chiffre d'affaires</span></div>
+    <div class="kpi"><span class="kpi-valeur">{{ stats.nb_commandes }}</span>
+        <span class="kpi-titre">Commandes (hors annulées)</span></div>
+    <div class="kpi"><span class="kpi-valeur">{{ '%.2f'|format(stats.panier_moyen) }} DT</span>
+        <span class="kpi-titre">Panier moyen</span></div>
+    <div class="kpi"><span class="kpi-valeur">{{ stats.nb_produits }}</span>
+        <span class="kpi-titre">Produits</span></div>
+    <div class="kpi"><span class="kpi-valeur">{{ '%.2f'|format(stats.valeur_stock) }} DT</span>
+        <span class="kpi-titre">Valeur du stock</span></div>
+    <div class="kpi"><span class="kpi-valeur">{{ stats.nb_annulees }}</span>
+        <span class="kpi-titre">Commandes annulées</span></div>
+</div>
+
+<div class="deux-colonnes">
+    <section class="bloc">
+        <h3>Commandes par statut</h3>
+        {% for s in stats.par_statut %}
+        <div class="ligne-barre">
+            <span class="etiquette">{{ s.libelle }}</span>
+            <span class="piste"><span class="barre {{ s.code }}" style="width: {{ s.pct }}%"></span></span>
+            <span class="valeur">{{ s.nombre }}</span>
+        </div>
+        {% endfor %}
+    </section>
+
+    <section class="bloc">
+        <h3>Ventes des 7 derniers jours</h3>
+        {% for j in stats.ventes_7_jours %}
+        <div class="ligne-barre">
+            <span class="etiquette">{{ j.libelle }}</span>
+            <span class="piste"><span class="barre vente" style="width: {{ j.pct }}%"></span></span>
+            <span class="valeur">{{ '%.2f'|format(j.montant) }} DT</span>
+        </div>
+        {% endfor %}
+    </section>
+</div>
+
+<div class="deux-colonnes">
+    <section class="bloc">
+        <h3>Produits à réapprovisionner (stock &le; {{ stats.seuil }})</h3>
+        {% if stats.stock_bas %}
+        <table>
+            <tr><th>Produit</th><th>Catégorie</th><th>Stock</th></tr>
+            {% for p in stats.stock_bas %}
+            <tr>
+                <td>{{ p.nom }}</td>
+                <td>{{ p.categorie.nom }}</td>
+                <td class="{{ 'rupture' if p.stock == 0 else 'stock-bas' }}">{{ p.stock }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>Aucun produit en stock bas.</p>
+        {% endif %}
+    </section>
+
+    <section class="bloc">
+        <h3>Produits les plus vendus</h3>
+        {% if stats.top_produits %}
+        <table>
+            <tr><th>Produit</th><th>Quantité</th><th>Montant</th></tr>
+            {% for p in stats.top_produits %}
+            <tr><td>{{ p.nom }}</td><td>{{ p.quantite }}</td><td>{{ '%.2f'|format(p.montant) }} DT</td></tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>Aucune vente pour le moment.</p>
+        {% endif %}
+    </section>
+</div>
+
+<section class="bloc">
+    <h3>Dernières commandes</h3>
+    {% if stats.dernieres_commandes %}
+    <table>
+        <tr><th>N°</th><th>Client</th><th>Date</th><th>Statut</th><th>Total</th><th></th></tr>
+        {% for c in stats.dernieres_commandes %}
+        <tr>
+            <td>#{{ c.id }}</td>
+            <td>{{ c.client.username }}</td>
+            <td>{{ c.date_commande.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td><span class="statut {{ c.statut }}">{{ STATUTS[c.statut] }}</span></td>
+            <td>{{ '%.2f'|format(c.total) }} DT</td>
+            <td><a href="{{ url_for('cart.detail_commande', commande_id=c.id) }}">Détail</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p><a href="{{ url_for('cart.gestion_commandes') }}">Gérer toutes les commandes &rarr;</a></p>
+    {% else %}
+    <p>Aucune commande pour le moment.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -13,6 +13,7 @@ from models import Categorie, Produit, Role, User
 from admin_panel import init_admin
 from api import api
 from cart import cart
+from dashboard import dashboard
 from shop import shop
 
 app = Flask(__name__)
@@ -28,6 +29,7 @@ user_manager = UserManager(app, db, User)   # Flask-User (utilise Flask-Login en
 
 app.register_blueprint(shop)
 app.register_blueprint(cart)
+app.register_blueprint(dashboard)
 app.register_blueprint(api)
 init_admin(app)                    # Flask-Admin : http://127.0.0.1:5000/admin/
 
