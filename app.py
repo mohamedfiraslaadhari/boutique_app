@@ -2,6 +2,10 @@
 
 Lancement :  python app.py   puis   http://127.0.0.1:5000
 """
+import shutil
+import uuid
+from pathlib import Path
+
 from flask import Flask, render_template
 from flask_uploads import configure_uploads
 from flask_user import UserManager
@@ -63,6 +67,52 @@ def erreur_413(e):
                            message="Fichier trop volumineux (2 Mo maximum)."), 413
 
 
+# ---------- Images de démonstration ----------
+# nom du produit -> nom du fichier (sans extension) à placer dans le dossier static/demo
+PHOTOS_DEMO = {
+    'Clavier sans fil': 'clavier',
+    'Souris optique': 'souris',
+    'Lampe de bureau': 'lampe',
+    'Ballon de football': 'ballon',
+}
+EXTENSIONS_PHOTOS = ('.jpg', '.jpeg', '.png', '.webp')
+
+
+def trouver_image_demo(nom_fichier):
+    """Cherche static/demo/<nom_fichier>.jpg (ou .jpeg, .png, .webp), majuscules ou non.
+
+    Retourne None si l'image n'existe pas.
+    """
+    dossier = Path(app.static_folder) / 'demo'
+    if dossier.is_dir():
+        for chemin in sorted(dossier.iterdir()):
+            if chemin.stem.lower() == nom_fichier and chemin.suffix.lower() in EXTENSIONS_PHOTOS:
+                return chemin
+    return None
+
+
+def ajouter_photos_demo():
+    """Donne une image aux produits de démonstration qui n'en ont pas encore.
+
+    L'image est copiée dans static/uploads (comme une photo envoyée par le formulaire).
+    Retourne le nombre d'images ajoutées. On peut relancer sans risque : un produit
+    qui a déjà une photo n'est jamais modifié.
+    """
+    dossier_photos = Path(app.config['UPLOADED_PHOTOS_DEST'])
+    dossier_photos.mkdir(parents=True, exist_ok=True)
+    ajoutees = 0
+    for nom, nom_fichier in PHOTOS_DEMO.items():
+        produit = Produit.query.filter(Produit.nom == nom, Produit.photo.is_(None)).first()
+        source = trouver_image_demo(nom_fichier)
+        if produit and source:
+            nouveau_nom = f'{uuid.uuid4().hex}{source.suffix.lower()}'
+            shutil.copy(source, dossier_photos / nouveau_nom)
+            produit.photo = nouveau_nom
+            ajoutees += 1
+    db.session.commit()
+    return ajoutees
+
+
 # ---------- Commande : flask seed (données de démonstration) ----------
 @app.cli.command('seed')
 def seed():
@@ -100,7 +150,8 @@ def seed():
                     prix=29.90, stock=3, categorie_id=sport.id),
         ])
         db.session.commit()
-    print('Données de démonstration créées : admin / vendeur / client.')
+    nb_images = ajouter_photos_demo()
+    print(f'Données de démonstration créées : admin / vendeur / client ({nb_images} image(s) ajoutée(s)).')
 
 
 if __name__ == '__main__':
