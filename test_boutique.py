@@ -25,6 +25,11 @@ from models import Categorie, Commande, Produit  # noqa: E402
 
 app.config['WTF_CSRF_ENABLED'] = False   # les formulaires du site sont testés sans jeton
 
+# Les photos des tests vont dans un dossier temporaire (jamais dans static/uploads)
+DOSSIER_PHOTOS = tempfile.mkdtemp()
+app.config['UPLOADED_PHOTOS_DEST'] = DOSSIER_PHOTOS
+app.upload_set_config['photos'].destination = DOSSIER_PHOTOS
+
 
 def setUpModule():
     # Sécurité : on refuse de continuer si on n'est pas sur la base de test.
@@ -389,4 +394,5 @@ class TestAdmin(BaseTest):
 
 
 if __name__ == '__main__':
+    unittest.main()
     unittest.main()
