@@ -2,6 +2,7 @@
 
 Lancement :  python app.py   puis   http://127.0.0.1:5000
 """
+import os
 import shutil
 import uuid
 from pathlib import Path
@@ -18,6 +19,7 @@ from admin_panel import init_admin
 from api import api
 from cart import cart
 from dashboard import dashboard
+from securite import init_securite
 from shop import shop
 
 app = Flask(__name__)
@@ -36,6 +38,7 @@ app.register_blueprint(cart)
 app.register_blueprint(dashboard)
 app.register_blueprint(api)
 init_admin(app)                    # Flask-Admin : http://127.0.0.1:5000/admin/
+init_securite(app)                 # en-têtes de sécurité et limitation des connexions
 
 
 # ---------- Rôle par défaut à l'inscription ----------
@@ -155,4 +158,5 @@ def seed():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Mode développement par défaut ; en production : FLASK_DEBUG=0 dans le fichier .env
+    app.run(host='127.0.0.1', debug=os.getenv('FLASK_DEBUG', '1') == '1')

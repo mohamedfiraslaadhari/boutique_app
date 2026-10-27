@@ -1,5 +1,6 @@
 """Configuration de l'application Boutique."""
 import os
+import secrets
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,8 +25,18 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Clé secrète : signe les sessions et les formulaires (CSRF). 32 caractères minimum.
-    SECRET_KEY = os.getenv('SECRET_KEY', 'changez-moi-cle-secrete-boutique-2026-xyz')
+    # Clé secrète : signe les sessions et les formulaires (CSRF). Elle vient du fichier .env
+    # (jamais écrite dans le code). Sans clé dans .env, on en invente une au hasard : le site
+    # fonctionne, mais les connexions sont perdues à chaque redémarrage.
+    SECRET_KEY = os.getenv('SECRET_KEY') or secrets.token_hex(32)
+
+    # --- Cookies de session ---
+    SESSION_COOKIE_HTTPONLY = True          # inaccessible au JavaScript de la page
+    SESSION_COOKIE_SAMESITE = 'Lax'         # non envoyé par les sites tiers (limite le CSRF)
+    SESSION_COOKIE_SECURE = os.getenv('HTTPS') == '1'      # HTTPS = 1 dans .env en production
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SECURE = os.getenv('HTTPS') == '1'
 
     # --- Téléchargement des photos (Flask-Uploads / Flask-Reuploaded) ---
     UPLOADED_PHOTOS_DEST = str(BASE_DIR / 'static' / 'uploads')
